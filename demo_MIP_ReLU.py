@@ -214,14 +214,16 @@ def minimize_l2(X, W1, b1, W2, b2, weight_fc, bias_fc, cnn_output, K=3, kernel_s
             m.addGenConstrIndicator(z[j], False, c[j] <= 0.0)           
         m.update()
         u=m.addVar(name="u")
-        tmp = tmp + w_fc * u + b_fc
+        tmp = tmp + w_fc * u 
         m.addGenConstrMax(u, [a[i] for i in range(X.shape[0])])
         m.update()    
         #m.feasRelax()
     for i in range(weight1.shape[0]):
         conv2vec(y, X, weight1[i], bias1[i], weight_fc[0,i], bias_fc, kernel_size)
     for i in range(weight2.shape[0]):
-        conv2vec(y, X, weight2[i], bias2[i], weight_fc[0,i], bias_fc, kernel_size = (4,25))
+        conv2vec(y, X, weight2[i], bias2[i], weight_fc[0,25+i], bias_fc, kernel_size = (4,25))
+    tmp = tmp + bias_fc
+    print(tmp)
     m.addConstr(output == tmp)
     m.addConstr( tmp * cnn_output <= 0.0 )
     m.update()
@@ -232,6 +234,7 @@ def minimize_l2(X, W1, b1, W2, b2, weight_fc, bias_fc, cnn_output, K=3, kernel_s
     vals = m.getVars() 
     return (vals)
 #%%
+# time 1h4m
 tic = time.time()
 
 def extract_y(new_example, X):
@@ -263,8 +266,19 @@ X0 = X[0,:,:]
 new_example0 = minimize_l2(X0, weight1, bias1, weight2, bias2, weight_fc, \
                           bias_fc[0], cnn_output[0][0],\
                           K=3, kernel_size=(3,25))
+#%%
 X4 = X[4,:,:]
 m = gp.Model()
 new_example4 = minimize_l2(X4, weight1, bias1, weight2, bias2, weight_fc, \
                           bias_fc[0], cnn_output[4][0],\
                           K=3, kernel_size=(3,25))      
+#%%
+new_example = new_example0
+temp = np.zeros((1,50))
+num=0
+for i in range(7931): 
+    if new_example[i].VarName[0] == "u":
+        temp[0,num] =  new_example[i].X
+        num = num + 1
+np.sum(temp * weight_fc) + bias_fc
+new_example0[626]
